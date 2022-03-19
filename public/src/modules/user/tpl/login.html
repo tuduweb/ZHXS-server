@@ -1,0 +1,30 @@
+<ion-view view-title="登录">
+	<ion-content>
+		<form name="form" ng-submit="vm.submitForm(form.$valid)" novalidate>
+			<div class="list">
+				<label class="item item-input">
+					<i class="icon ion-ios-person-outline positive"></i>
+					<input input-clear name="username" type="text" placeholder="请输入您的用户名" ng-model="vm.form.username" required>
+				</label>
+				<label class="item item-input">
+					<i class="icon ion-ios-unlocked-outline positive"></i>
+					<input input-clear name="password" type="password" placeholder="请输入您的密码" ng-model="vm.form.password" required>
+				</label>
+				<label class="item item-input">
+					<i class="icon ion-ios-bolt-outline positive"></i>
+					<input input-clear name="code" type="number" placeholder="请输入验证码" ng-model="vm.form.code" required>
+					<img class="captcha" on-tap="vm.captcha()" ng-src="{{ vm.code }}" alt="">
+				</label>
+			</div>
+			<div class="padding-left padding-right">
+				<button type="submit" class="button button-block button-positive">立即登录</button>
+			</div>
+		</form>
+		<div class="weui-footer">
+            <p class="weui-footer__links">
+                <a href="http://www.beian.miit.gov.cn/" target="_blank" class="weui-footer__link">皖ICP备19012780号-1</a>
+            </p>
+            <p class="weui-footer__text">Copyright © 2019 skyvow.cn</p>
+        </div>
+	</ion-content>
+</ion-view>
