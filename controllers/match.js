@@ -1,4 +1,5 @@
 import proxy from '../proxy'
+import mongoose from 'mongoose'
 
 class Ctrl{
 	constructor(app) {
@@ -25,8 +26,9 @@ class Ctrl{
 	routes() {
 		//this.app.get('/api/match', this.getAll.bind(this))
 		this.app.get('/api/match/start', this.start.bind(this))
-
-		this.app.put('/api/match/submit/:id', this.submit.bind(this))
+		this.app.post('/api/match/submit', this.submit.bind(this))
+		this.app.get('/api/match/detail/:id', this.detail.bind(this))
+		this.app.get('/api/match/score/:id', this.showScore.bind(this))
 
 		this.app.get('/api/match/generate', this.generate.bind(this))
 		this.app.get('/api/match/:id', this.get.bind(this))
@@ -402,7 +404,7 @@ class Ctrl{
         this.suiteModel.model.aggregate( [ {
 			$sample: { size: 1 } },
 			{$lookup: { from: "questions", localField: "questions", foreignField: "_id", as: "datas"}}
-		] )
+		])
         .then(doc => {
 			if (!doc) return res.tools.setJson(1, '资源不存在或已删除')
 
@@ -435,12 +437,12 @@ class Ctrl{
         .catch(err => next(err))
     }
 
-	submit(req, res, next) {
-        //权限验证
+	detail(req, res, next) {
+		
+	}
 
-        //根据模式, 生成新的答题比赛
-        
-        //从套题里面获取比赛
+	showScore(req, res, next) {
+		const _id = req.params.id
 
 		const params = {
 			query  : {
@@ -450,19 +452,126 @@ class Ctrl{
 			options: {}, 
 		}
 
-		this.model.findOne(params.query, params.fields).exec().then(doc => {
-			if (!doc) return res.tools.setJson(1, '资源不存在或已删除')
-			return res.tools.setJson(0, '调用成功', doc)
+		this.model.model.findOne(params.query, params.fields).exec()
+		.then(result => {
+			if (!result) return res.tools.setJson(1, 'match不存在或已删除')
+			return res.tools.setJson(0, '调用成功', result)
 		}).catch(err => next(err))
 
+	}
 
-		const body = {
-            //id  : req.body.id,
-            choices : req.body.choices,
-            remark: req.body.remark,
-            images: req.body.images,
-            types : req.body.types,
-        }
+	submit(req, res, next) {
+        //权限验证
+
+        //根据模式, 生成新的答题比赛
+        
+        //从套题里面获取比赛
+		//为什么是req.body 而不是 req.params?
+		const params = {
+			query  : {
+				_id: req.body.id
+			},
+			fields : {}, 
+			options: {}, 
+		}
+
+		const choices = req.body.choices
+
+		console.log("req.body", req.body)
+		this.model.model.aggregate([
+			{ $match: { _id: mongoose.Types.ObjectId(req.body.id) }  },
+			{ $lookup: { from: "suites", localField: "suite", foreignField: "_id", as: "suiteData" } },
+			{
+				$unwind: {
+					path: '$suiteData',
+					preserveNullAndEmptyArrays: true,
+				}
+			},
+			{
+				$project: {
+					_id : 1,
+					state: 1,
+					create_at: 1,
+					'suiteData.questions': 1
+				}
+			},
+			{ $lookup: { from: "questions", localField: "suiteData.questions", foreignField: "_id", as: "questionsData" } },
+
+		]).then(docs => {
+			if(!docs) return;
+
+			console.log("appgregate", docs)
+		
+			//console.log(docs[0].questionsData)
+
+			let trueCnt = 0, falseCnt = 0
+
+			docs[0].questionsData.forEach((item, index) => {
+				//console.log(item.answer)
+				if (item.answer[0] == choices[index]) { trueCnt++ }
+				else { falseCnt++ }
+			})
+
+			let _grade = 100 / docs[0].questionsData.length * trueCnt * 100
+
+			//更新成绩到数据中
+			// 	const query = {
+			// 		_id: req.body.id
+			// 	}
+		
+			// 	const body = {
+			// 		userChoices : req.body.choices,
+			// 		finish_at: Date.now(),
+			// 		state : 2
+			// 	}
+			// this.model.put(query, body)
+			// .then(doc => {
+			// 	if (!doc) return res.tools.setJson(1, '资源不存在或已删除')
+			// 	return res.tools.setJson(0, '更新成功', doc)
+			// })
+			// .catch(err => next(err))
+
+			const result = {
+				_id: docs[0]._id,
+				_doc: docs[0],
+				grade: _grade
+			}
+
+			return res.tools.setJson(0, '调用成功', result)
+
+		}).catch(err => next(err))
+
+		// this.model.model.findOne(params.query, params.fields).exec().then(doc => {
+		// 	if (!doc) return res.tools.setJson(1, '该match记录不存在')
+
+		// 	const query = {
+		// 		_id: req.body.id
+		// 	}
+	
+		// 	const body = {
+		// 		choices : req.body.choices,
+		// 		finish_at: Date.now(),
+		// 		state : 2
+		// 	}
+
+
+		// 	const result = {
+		// 		_id: doc._id,
+		// 		_doc: doc,
+		// 		grade: 9900
+		// 	}
+
+		// 	return res.tools.setJson(0, '调用成功', result)
+		// }).catch(err => next(err))
+
+
+		// this.model.put(query, body)
+		// .then(doc => {
+		// 	if (!doc) return res.tools.setJson(1, '资源不存在或已删除')
+		// 	return res.tools.setJson(0, '更新成功', doc)
+		// })
+		// .catch(err => next(err))
+
 	
 	
 	}
