@@ -10,6 +10,7 @@ import help from '../controllers/help'
 import user from '../controllers/user'
 import questions from '../controllers/questions'
 import match from '../controllers/match'
+import study from '../controllers/study'
 
 export default function(app) {
 	new common(app)
@@ -24,4 +25,5 @@ export default function(app) {
 	new user(app)
 	new questions(app)
 	new match(app)
+	new study(app)
 }

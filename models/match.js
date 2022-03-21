@@ -14,7 +14,7 @@ const Schema = mongoose.Schema({
 		default: Date.now(),
 	},
 	finish_at: Date,
-	userAnswer: Array,
+	userChoices: Array,
 	grade: {
 		type   : Number,
 		default: -1,
