@@ -4,7 +4,9 @@ import { options } from 'mongoose'
 import proxy from '../proxy'
 import formidable from 'formidable'
 import config from '../config'
+import mongoose from 'mongoose'
 
+const ObjectId = mongoose.Schema.Types.ObjectId
 
 const fs = bluebird.promisifyAll(FS)
 
@@ -12,7 +14,7 @@ class Ctrl{
 	constructor(app) {
 		Object.assign(this, {
 			app, 
-			model: proxy.questions,
+			model: proxy.study,
             upload: proxy.upload,
 		})
 
@@ -31,6 +33,7 @@ class Ctrl{
 	 */
 	routes() {
 		this.app.post('/api/study/:id/record/:segIdx', this.updateRecord.bind(this))
+		this.app.get('/api/study/:id', this.get.bind(this))
 	}
 
     /**
@@ -84,6 +87,32 @@ class Ctrl{
 				.catch(err => next(err))
 			}
 		})
+	}
+
+	get(req, res, next) {
+
+		const _id = req.params.id
+
+		const params = {
+			query  : {
+				_id: ObjectId(req.params.id)
+			},
+			fields : {}, 
+			options: {}, 
+		}
+
+		console.log(req.params)
+
+		this.model.model.findOne(params.query, params.fields).exec()
+		.then(result => {
+			if (!result) return res.tools.setJson(1, 'study不存在或已删除')
+			return res.tools.setJson(0, '调用成功', result)
+		}).catch(err => next(err))
+
+	}
+
+	import(req, res, next) {
+		//
 	}
 
 

@@ -9,6 +9,7 @@ import help from '../models/help'
 import questions from '../models/questions'
 import match from '../models/match'
 import suite from '../models/suite'
+import study from '../models/study'
 
 import user from './user'
 import upload from './upload'
@@ -24,6 +25,7 @@ export default {
 	questions: new RestBase(questions),
 	match   : new RestBase(match),
 	suite	: new RestBase(suite),
+	study	: new RestBase(study),
 	user    : user, 
 	upload  : upload, 
 }
