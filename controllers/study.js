@@ -56,7 +56,7 @@ class Ctrl{
 	    form.maxFieldsSize = 2 * 1024 * 1024
 
 	    // 设置所有文件的大小总和
-	    form.maxFields = 1000 
+	    form.maxFields = 1000
 
 	    form.parse(req, (err, fields, files) => callback(err, fields, files))
 	}
@@ -76,13 +76,26 @@ class Ctrl{
 				const filenewpath  = 'public/uploads/voice/' +  filenewname
 				const result       = 'uploads/' + filenewname
 
+				let randNum = function (min, max) {
+					return Math.floor(Math.random() * (max - min)) + min   
+				  }
+
 				// 将临时文件保存为正式的文件
 				fs.renameAsync(tempfilepath, filenewpath)
 				.then(doc => this.upload.newAndSave(file.name, result))
 				.then(doc => {
                     //把数据拿去分析 给出结果?
-                    //调用Python结构执行分析..
-                    res.tools.setJson(0, '上传成功', doc)
+                    
+					//调用Python结构执行分析..
+					files = {'attachment_file': ('1.png', open('1.png', 'rb'), 'image/png', {})}
+					let res = requests.post('http://8.134.216.143/', files=files, data = {})
+					console.log(res)
+					const resData = {
+						grade: randNum(60, 100),
+						commentId: randNum(0, 10),
+						doc: doc
+					}
+                    res.tools.setJson(0, '上传成功', resData)
                 })
 				.catch(err => next(err))
 			}
