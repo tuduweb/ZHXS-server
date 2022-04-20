@@ -29,12 +29,16 @@ import tools from './middlewares/tools'
 import jwtauth from './middlewares/jwtauth'
 import routes from './routes'
 
+import * as ScheduleJob from './schedule';
+
 const app          = express()
 const mkdirsSync   = mkdirs.mkdirsSync
 const SessionStore = sessionMongoose(connect)
 const mongodb      = new mongo(app, config)
 const store        = new SessionStore({ url: mongodb.dblink })
 const auth         = new jwtauth()
+
+ScheduleJob.run();
 
 // 判断文件夹是否存在, 若不存在则创建之
 mkdirsSync(config.upload.tmp)
