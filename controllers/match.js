@@ -35,7 +35,6 @@ class Ctrl{
 		this.app.post('/api/match', this.post.bind(this))
 		this.app.put('/api/match/:id', this.put.bind(this))
 		this.app.delete('/api/match/:id', this.delete.bind(this))
-		this.app.get('/api/match/search/all', this.search.bind(this))
 	}
 
 	/**
@@ -320,55 +319,6 @@ class Ctrl{
 		.catch(err => next(err))
 	}
 
-	/**
-	 * @api {search} /goods/search/all 按关键词查询资源
-	 * @apiDescription 按关键词查询资源
-	 * @apiName search
-	 * @apiGroup goods
-	 *
-	 * @apiParam {String} keyword 关键词
-	 * @apiSampleRequest /goods/search/all
-	 * 
-	 * @apiPermission none
-	 * 
-	 * @apiUse Header
-	 * @apiUse Success
-	 *
-	 * @apiSuccessExample Success-Response:
-	 *     HTTP/1.1 200 OK
-	 *     {
-	 *       "meta": {
-	 *       	"code": 0,
-	 *       	"message": "调用成功"
-	 *       },
-	 *       "data": [{
-	 *       	"_id": "_id",
-	 *       	"num": "num",
-	 *       }]
-	 *     }
-	 */
-	search(req, res, next) {
-		const keyword = req.query.keyword
-		const pattern = keyword && new RegExp(keyword)
-
-		this.model.model.aggregate([
-			{
-				$match: {
-					name: pattern
-				}
-			},
-			{
-				$group: {
-					_id: '$name',
-					num: {
-						$sum: 1
-					}
-				}
-			}
-		])
-		.then(doc => res.tools.setJson(0, '调用成功', doc))
-		.catch(err => next(err))
-	}
 
 	// // path: data->questions->[suite]->datas->...
 
@@ -504,40 +454,44 @@ class Ctrl{
 		
 			//console.log(docs[0].questionsData)
 
+			//判断题目正确与否
 			let trueCnt = 0, falseCnt = 0
-
 			docs[0].questionsData.forEach((item, index) => {
 				//console.log(item.answer)
 				if (item.answer[0] == choices[index]) { trueCnt++ }
 				else { falseCnt++ }
 			})
-
+			//计算成绩
 			let _grade = 100 / docs[0].questionsData.length * trueCnt * 100
 
-			//更新成绩到数据中
-			// 	const query = {
-			// 		_id: req.body.id
-			// 	}
-		
-			// 	const body = {
-			// 		userChoices : req.body.choices,
-			// 		finish_at: Date.now(),
-			// 		state : 2
-			// 	}
-			// this.model.put(query, body)
-			// .then(doc => {
-			// 	if (!doc) return res.tools.setJson(1, '资源不存在或已删除')
-			// 	return res.tools.setJson(0, '更新成功', doc)
-			// })
-			// .catch(err => next(err))
+			//更新成绩到数据中, 并操作积分表, 给分
 
-			const result = {
-				_id: docs[0]._id,
-				_doc: docs[0],
-				grade: _grade
+			const query = {
+				_id: req.body.id
+			}
+	
+			const body = {
+				userChoices : req.body.choices,
+				grade: _grade,
+				finish_at: Date.now(),
+				state : 2
 			}
 
-			return res.tools.setJson(0, '调用成功', result)
+			this.model.put(query, body)
+			.then(doc => {
+				if (!doc) return res.tools.setJson(1, '保存结果失败!请联系管理员。')
+				//return res.tools.setJson(0, '更新成功', doc)
+				const result = {
+					_id: docs[0]._id,
+					_doc: docs[0],
+					grade: _grade
+				}
+	
+				return res.tools.setJson(0, '调用成功', result)
+			
+			})
+			.catch(err => next(err))
+
 
 		}).catch(err => next(err))
 
