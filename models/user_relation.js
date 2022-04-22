@@ -3,7 +3,7 @@ import mongoose from 'mongoose'
 const ObjectId = mongoose.Schema.Types.ObjectId
 
 const Schema = mongoose.Schema({
-	userid   : {
+	userId   : {
 		type: ObjectId, 
 		ref : 'user',
 	},
@@ -22,4 +22,4 @@ const Schema = mongoose.Schema({
 	update_at: Date,
 })
 
-export default mongoose.model('user_score', Schema)
+export default mongoose.model('user_relation', Schema)

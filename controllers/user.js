@@ -132,7 +132,7 @@ class Ctrl{
 					// // 	"firstTime" : Date.now()
 					// //   }
 					const relationBody = {
-						userid: mongoose.Types.ObjectId(doc._id),
+						userId: mongoose.Types.ObjectId(doc._id),
 						parentId: mongoose.Types.ObjectId(refInfo.userId),
 						refSrc: refInfo.path,
 						refTime: refInfo.firstTime
