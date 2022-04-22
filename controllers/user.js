@@ -4,12 +4,16 @@ import jwt from '../common/jwtauth'
 import WXBizDataCrypt from '../common/WXBizDataCrypt'
 import proxy from '../proxy'
 import jwtauth from '../middlewares/jwtauth'
+import faker from '@faker-js/faker'
+import mongoose from 'mongoose'
+
 
 class Ctrl{
 	constructor(app) {
 		Object.assign(this, {
 			app, 
-			model: proxy.user, 
+			model: proxy.user,
+			relationModel: proxy.user_relation
 		})
 
 		this.init()
@@ -36,6 +40,7 @@ class Ctrl{
 		this.app.post('/api/user/reset/password', this.resetPassword.bind(this))
 		this.app.post('/api/user/info', this.saveInfo.bind(this))
 		this.app.get('/api/user/info', this.getInfo.bind(this))
+		this.app.get('/api/user/openIdInfo', this.getOpenIdInfo.bind(this))
 	}
 
 	/**
@@ -86,11 +91,21 @@ class Ctrl{
 	 *     }
 	 */
 	wechatSignUp(req, res, next) {
+		//body -> params, refInfo
 		const code = req.body.code
+		const refInfo = req.body.refInfo
+
+		console.log(req.body)//{ code: '0737W9100IySIN1vxf100C03hh37W91B', refInfo: '' }
+
+		console.log(refInfo)
+
 		const body = {
 			username: null, 
-			password: res.jwt.setMd5('123456'), 
+			password: res.jwt.setMd5('123456'),
 		}
+
+		//需要传入注册来源信息, 也就是从哪个页面跳转到完成注册的过程..
+		//需要传入推荐者信息，如果是通过用户分享进来的用户，需要传入分享者信息..
 
 		this.getSessionKey(code)
 		.then(doc => {
@@ -102,13 +117,48 @@ class Ctrl{
 			}
 		})
 		.then(doc => {
-			if (!doc) return this.model.newAndSave(body)
+			if (!doc) return this.model.newAndSave(body)//没有找到记录
 			if (doc && doc._id) return res.tools.setJson(1, '用户名已存在')
 		})
 		.then(doc => {
-			if (doc && doc._id) return res.tools.setJson(0, '注册成功', {
-				token: res.jwt.setToken(doc._id)
-			})
+			if (doc && doc._id) {
+
+				if(refInfo) {
+
+					//相关逻辑..处理推荐信息等..这里是很适合使用队列的 暂时使用直接方式..
+					// // let refInfo = {
+					// // 	"userId"    : userId,
+					// // 	"path"      : refPath,
+					// // 	"firstTime" : Date.now()
+					// //   }
+					const relationBody = {
+						userid: mongoose.Types.ObjectId(doc._id),
+						parentId: mongoose.Types.ObjectId(refInfo.userId),
+						refSrc: refInfo.path,
+						refTime: refInfo.firstTime
+					}
+
+					this.relationModel.post(relationBody)
+					.then(res => {
+						console.log("storage realation:", relationBody, res)
+						//还需要处理积分相关
+
+					})
+					.catch(err => {
+						console.log("storage realation err:", err)
+
+						//发生错误 把结果送入队列 待处理..
+					})
+
+
+				}
+
+				//
+				return res.tools.setJson(0, '注册成功', {
+					token: res.jwt.setToken(doc._id)
+				})
+			
+			}
 		})
 		.catch(err => next(err))
 	}
@@ -141,9 +191,14 @@ class Ctrl{
 	wechatSignIn(req, res, next) {
 		const code = req.body.code
 
+		console.log("wechatSignIn", req.body)
+		
 		this.getSessionKey(code)
 		.then(doc => {
 			doc = JSON.parse(doc)
+
+			console.log("wechatSignIn Doc", doc)
+
 			if (doc && doc.errmsg) return res.tools.setJson(doc.errcode, doc.errmsg)
 			if (doc && doc.openid) return this.model.findByName(doc.openid)
 		})
@@ -295,6 +350,8 @@ class Ctrl{
 		const username = req.body.username
 		const password = req.body.password
 		
+		console.log(req.body)
+
 		if (!username || !password) return res.tools.setJson(1, '用户名或密码错误')	
 		if (req.body.code !== req.session.code) return res.tools.setJson(1, '验证码错误')
 
@@ -464,9 +521,23 @@ class Ctrl{
 		this.model.findByName(req.user.username)
 		.then(doc => {
 			if (!doc) return res.tools.setJson(1, '用户不存在或已删除')
+			faker.setLocale("zh_CN")
+			doc["nickname"] = faker.name.findName()
+			doc["school"] = faker.name.findName()
 			return res.tools.setJson(0, '调用成功', doc)
 		})
 		.catch(err => next(err))
+	}
+
+	getOpenIdInfo(req, res, next) {
+
+		this.model.findByName(req.user.username)
+		.then(doc => {
+			if (!doc) return res.tools.setJson(1, '用户不存在或已删除')
+			return res.tools.setJson(0, '调用成功', doc)
+		})
+		.catch(err => next(err))
+
 	}
 }
 

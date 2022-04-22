@@ -14,6 +14,8 @@ import study from '../models/study'
 import user from './user'
 import upload from './upload'
 
+import user_relation from '../models/user_relation'
+
 export default {
 	banner  : new RestBase(banner), 
 	classify: new RestBase(classify), 
@@ -26,6 +28,8 @@ export default {
 	match   : new RestBase(match),
 	suite	: new RestBase(suite),
 	study	: new RestBase(study),
+	user_relation: new RestBase(user_relation),
+
 	user    : user, 
 	upload  : upload, 
 }

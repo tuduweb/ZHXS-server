@@ -4,6 +4,8 @@ import crypto from 'crypto'
 const MAX_LOGIN_ATTEMPTS = 5
 const LOCK_TIME          = 2 * 60 * 60 * 1000
 
+const ObjectId = mongoose.Schema.Types.ObjectId
+
 const Schema = mongoose.Schema({
 	username : String,
 	password : String,
@@ -13,6 +15,30 @@ const Schema = mongoose.Schema({
 	nickname : String,
 	gender   : String,
 	birthday : Date,
+
+	schoolId : ObjectId,
+	school   : String,
+	
+	score	 : {
+		type    : Number, 
+		required: true, 
+		default : 0, 
+	},
+	studyTime: {
+		type    : Number, 
+		required: true, 
+		default : 0, 
+	},
+	difenSet : {
+		type    : Number, 
+		required: true, 
+		default : 0, 
+	},
+	avgGrade : {
+		type    : Number, 
+		required: true, 
+		default : 0, 
+	},
 	loginAttempts: { 
 		type    : Number, 
 		required: true, 
