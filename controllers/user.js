@@ -41,6 +41,8 @@ class Ctrl{
 		this.app.post('/api/user/info', this.saveInfo.bind(this))
 		this.app.get('/api/user/info', this.getInfo.bind(this))
 		this.app.get('/api/user/openIdInfo', this.getOpenIdInfo.bind(this))
+
+		this.app.get('/api/user/shareFriend/demo', this.getShareFriendInfo.bind(this))
 	}
 
 	/**
@@ -305,6 +307,17 @@ class Ctrl{
 	signUp(req, res, next) {
 		const username = req.body.username
 		const password = req.body.password
+		
+		console.log(req.body)
+
+		//普通注册
+		//const refInfo = req.body.refInfo
+		const refInfo =  {
+			//userId : '6262a1b39fc5e61a24cad329',
+			userId : '6262a1b39fc5e61a24cad32a',
+			path : "test/",
+			firstTime : 1650622544053,
+		}
 
 		if (!username || !password) return res.tools.setJson(1, '用户名或密码错误')
 		
@@ -316,7 +329,41 @@ class Ctrl{
 			})
 			return res.tools.setJson(1, '用户名已存在')
 		})
-		.then(doc => res.tools.setJson(0, '注册成功'))
+		.then(doc => {
+
+			//积分相关 //以下需要封装成服务..
+			if(refInfo) {
+
+				//相关逻辑..处理推荐信息等..这里是很适合使用队列的 暂时使用直接方式..
+				// // let refInfo = {
+				// // 	"userId"    : userId,
+				// // 	"path"      : refPath,
+				// // 	"firstTime" : Date.now()
+				// //   }
+				const relationBody = {
+					userId: mongoose.Types.ObjectId(doc._id),
+					parentId: mongoose.Types.ObjectId(refInfo.userId),
+					refSrc: refInfo.path,
+					refTime: refInfo.firstTime
+				}
+
+				this.relationModel.post(relationBody)
+				.then(res => {
+					console.log("storage realation:", relationBody, res)
+					//还需要处理积分相关
+				})
+				.catch(err => {
+					console.log("storage realation err:", err)
+
+					//发生错误 把结果送入队列 待处理..
+				})
+
+
+			}
+
+
+			res.tools.setJson(0, '注册成功')
+		})
 		.catch(err => next(err))
 	}
 
@@ -537,6 +584,44 @@ class Ctrl{
 			return res.tools.setJson(0, '调用成功', doc)
 		})
 		.catch(err => next(err))
+
+	}
+
+	getShareFriendInfo(req, res, next) {
+		
+		const query = {
+			"parentId" : mongoose.Types.ObjectId("6262a1b39fc5e61a24cad32a")
+		}
+
+		//只显示10条
+		const opts = {
+			//page : req.query.page, 
+			limit: 10,
+		}
+
+		const params = {
+			query  : query, 
+			fields : {}, 
+			options: opts,
+		}
+
+		const options = {
+			path    : 'userId', 
+			select  : {},//'_id username nickname'
+		}
+
+		Promise.all([
+			this.relationModel.countAsync(query),
+			this.relationModel.findAndPopulateAsync(params, options)
+		])
+		.then(docs => {
+			console.log(docs)
+			if (!docs) return res.tools.setJson(1, '不存在数据')
+			return res.tools.setJson(0, '调用成功', docs)
+		})
+		.catch(err => {
+			next(err)
+		})
 
 	}
 }
