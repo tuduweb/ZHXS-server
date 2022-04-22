@@ -5,7 +5,8 @@ import proxy from '../proxy'
 import formidable from 'formidable'
 import config from '../config'
 import mongoose from 'mongoose'
-
+import axios from 'axios'
+import FormData from 'form-data'
 const ObjectId = mongoose.Schema.Types.ObjectId
 
 const fs = bluebird.promisifyAll(FS)
@@ -16,6 +17,7 @@ class Ctrl{
 			app, 
 			model: proxy.study,
             upload: proxy.upload,
+            voiceModel: proxy.voice,
 		})
 
 		this.init()
@@ -66,6 +68,13 @@ class Ctrl{
         console.log("id", req.params.id)
         console.log("segIdx", req.params.segIdx)
 
+		if(!req.params.id || !req.params.segIdx) {
+			res.tools.setJson(1, '填入参数错误')
+		}
+
+		const voiceId = req.params.id
+		const voiceSegId = req.params.segIdx
+
 		//res.tools.setJson(0, '上传成功', req)
 
 		this.initFormidable(req, (err, fields, files) => {
@@ -83,20 +92,95 @@ class Ctrl{
 				// 将临时文件保存为正式的文件
 				fs.renameAsync(tempfilepath, filenewpath)
 				.then(doc => this.upload.newAndSave(file.name, result))
-				.then(doc => {
+				.then(doc2 => {
                     //把数据拿去分析 给出结果?
                     
 					//调用Python结构执行分析..
-					files = {'attachment_file': ('1.png', open('1.png', 'rb'), 'image/png', {})}
-					let res = requests.post('http://8.134.216.143/', files=files, data = {})
-					console.log(res)
+					var forms = new FormData();
+
+					forms.append('id', voiceId)
+					forms.append('segId', voiceSegId)
+					forms.append('file', fs.createReadStream(filenewpath))
+
+					var config = {
+						method: 'post',
+						url: 'http://8.134.216.143:5000/upload',
+						headers: forms.getHeaders(),
+						data : forms
+					};
+
+					return axios(config)
+					// .then(function (response) {
+					// 	console.log("responseData", JSON.stringify(response.data));
+					// })
+					// .catch(function (error) {
+					// 	console.log(error);
+					// });
+
+					//console.log(res)
+
 					const resData = {
 						grade: randNum(60, 100),
 						commentId: randNum(0, 10),
-						doc: doc
+						doc: doc2
 					}
-                    res.tools.setJson(0, '上传成功', resData)
+                    
+					//数据入库
+					
+					const voiceBody = {
+						userId: mongoose.Types.ObjectId(req.user._id),
+						grade: resData['grade'],
+						commentId: resData['commentId'],
+						studyId: mongoose.Types.ObjectId('626282b26a769711c6dfbb63'),//voiceId
+						segId: voiceSegId,
+						voicePath: filenewpath,
+
+						//parentId: mongoose.Types.ObjectId(refInfo.userId),
+						//refSrc: refInfo.path,
+						//refTime: refInfo.firstTime
+					}
+
+					console.log(voiceBody)
+					
+					//this.voiceModel.
+
+
+					//给出评分
+					res.tools.setJson(0, '上传成功', resData)
                 })
+				.then(response => {
+					console.log("responseData", JSON.stringify(response.data))
+					let data = response.data
+
+					//还需要判断是否有值?
+					if(data['status'] != 0) {
+						return res.tools.setJson(1, '在与评测服务器交互时发生错误', data)
+					}
+
+					const resData = {
+						score: data['score'],
+						commentId: data['commentId'],
+					}
+					//数据入库
+
+					const voiceBody = {
+						userId: mongoose.Types.ObjectId(req.user._id),
+						grade: resData['grade'],
+						commentId: resData['commentId'],
+						studyId: mongoose.Types.ObjectId('626282b26a769711c6dfbb63'),//voiceId
+						segId: voiceSegId,
+						voicePath: filenewpath,
+
+						//parentId: mongoose.Types.ObjectId(refInfo.userId),
+						//refSrc: refInfo.path,
+						//refTime: refInfo.firstTime
+					}
+
+					console.log(voiceBody)
+
+					res.tools.setJson(0, '评测成功', resData)
+					
+				})
 				.catch(err => next(err))
 			}
 		})
