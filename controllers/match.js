@@ -7,7 +7,8 @@ class Ctrl{
 			app, 
 			model: proxy.match,
             suiteModel: proxy.suite,
-            questionsModel: proxy.questions
+            questionsModel: proxy.questions,
+			userScoreModel: proxy.user_score
 		})
 
 		this.init()
@@ -24,10 +25,18 @@ class Ctrl{
 	 * 注册路由
 	 */
 	routes() {
-		//this.app.get('/api/match', this.getAll.bind(this))
+		this.app.get('/api/match', this.getAll.bind(this))
+
+		this.app.post('/api/match/score/demo', this.postScore.bind(this))
+		this.app.get('/api/match/score/demo', this.getScore.bind(this))
+
 		this.app.get('/api/match/start', this.start.bind(this))
+		this.app.get('/api/match/start/:typeId', this.start.bind(this))
 		this.app.post('/api/match/submit', this.submit.bind(this))
+		
+		this.app.get('/api/match/detail/demo/:id', this.detail.bind(this))
 		this.app.get('/api/match/detail/:id', this.detail.bind(this))
+
 		this.app.get('/api/match/score/:id', this.showScore.bind(this))
 
 		this.app.get('/api/match/generate', this.generate.bind(this))
@@ -35,6 +44,55 @@ class Ctrl{
 		this.app.post('/api/match', this.post.bind(this))
 		this.app.put('/api/match/:id', this.put.bind(this))
 		this.app.delete('/api/match/:id', this.delete.bind(this))
+
+	}
+
+	getScore(req, res, next) {
+		const body = {
+			user: mongoose.Types.ObjectId('626282b26a769711c6dfbb63'),
+			scoreType: 0,
+			score: 100,
+			scoreType: 999,
+			scoreStat: 0,
+			remark: "系统测试" + Date.now(),
+		}
+
+		this.userScoreModel.post(body)
+		.then(doc => {
+			if(!doc) {}
+			return res.tools.setJson(0, 'success', doc)
+		})
+		.catch(err => res.tools.setJson(1, 'error', err))
+	}
+
+
+	postScore(req, res, next) {
+
+
+		//userScoreModel.model // mongoose.Types.ObjectId(
+
+		const params = {
+			query  : {
+				user: '626282b26a769711c6dfbb63'
+			},
+			fields : {},
+			options: {},
+		}
+
+		const options = {
+			path    : 'user', 
+			select  : {}, 
+		}
+
+		this.userScoreModel.model.findOne(params.query, params.fields)
+		.then(doc => {
+			if (!doc) return res.tools.setJson(1, '资源不存在或已删除')
+			return res.tools.setJson(0, '调用成功', doc)
+		})
+		.catch(err => next(err))
+	
+		//return res.tools.setJson(0, "ok", []);
+	
 	}
 
 	/**
@@ -85,7 +143,9 @@ class Ctrl{
 	 *     }
 	 */	
 	getAll(req, res, next) {
-		const query = {}
+		const query = {
+			owner: req.user.id
+		}
 
 		const opts = {
 			page : req.query.page, 
@@ -100,20 +160,18 @@ class Ctrl{
 			query.name = req.query.keyword
 		}
 
-		const params = {
-			query  : query, 
-			fields : {}, 
-			options: opts, 
-		}
-
 		const options = {
 			path    : 'types', 
 			select  : {}, 
 		}
 
+		const field = {
+
+		}
+
 		Promise.all([
 			this.model.countAsync(query), 
-			this.model.findAndPopulateAsync(params, options), 
+			this.model.getAll(query, field, options), 
 		])
 		.then(docs => {
 			res.tools.setJson(0, '调用成功', {
@@ -329,13 +387,6 @@ class Ctrl{
         
         //从套题里面获取比赛
 
-        const body = {
-            name  : req.body.name,
-            price : req.body.price,
-            remark: req.body.remark,
-            images: req.body.images,
-            types : req.body.types,
-        }
 
 		// this.questionsModel.model.aggregate( [ { $project: { _id: 1, title: 1 }} , { $sample: { size: 10 } } ] ).then(
 		// 	docs => {
@@ -351,14 +402,14 @@ class Ctrl{
 		// 	.catch(err => console.log(err))
 
 		// 需要限制lookup查询的元素的field
-        this.suiteModel.model.aggregate( [ {
-			$sample: { size: 1 } },
+        this.suiteModel.model.aggregate( [
+			{$sample: { size: 1 } },
 			{$lookup: { from: "questions", localField: "questions", foreignField: "_id", as: "datas"}}
 		])
         .then(doc => {
 			if (!doc) return res.tools.setJson(1, '资源不存在或已删除')
 
-			console.log(doc[0].datas)
+			//console.log(doc[0].datas) //题目数据
 
 			const body = {
 				suite : doc[0]._id,
@@ -370,11 +421,6 @@ class Ctrl{
 			this.model.post(body)
 			.then(matchDoc => {
 
-				// //matchDoc.suite = doc[0]
-				// Object.assign(matchDoc, {
-				// 	questions: doc[0]
-				// })
-				// console.log(matchDoc)
 				res.tools.setJson(0, '新增挑战成功', {_id: matchDoc._id, questions: doc[0]})
 			
 			})
@@ -389,6 +435,51 @@ class Ctrl{
 
 	detail(req, res, next) {
 		
+		const query = {
+			_id: req.params.id
+		}
+		
+		const field = {
+			//
+		}
+
+		// this.model.get(query, field)
+		// .then(result =>{
+		// 	if (!result) return res.tools.setJson(1, 'match不存在或已删除')
+		// 	return res.tools.setJson(0, '调用成功', result)
+		// }).catch(err => next(err))
+		
+		//{ _id: mongoose.Types.ObjectId(req.body.id) }
+		this.model.model.aggregate( [
+			{ $match: { _id: mongoose.Types.ObjectId(req.params.id) }  },
+			{ $lookup: { from: "suites", localField: "suite", foreignField: "_id", as: "suiteData" } },
+			{
+				$unwind: {
+					path: '$suiteData',
+					preserveNullAndEmptyArrays: true,
+				}
+			},
+			{
+				$project: {
+					_id : 1,
+					state: 1,
+					create_at: 1,
+					'suiteData.questions': 1
+				}
+			},
+			{ $lookup: { from: "questions", localField: "suiteData.questions", foreignField: "_id", as: "questionsData" }},
+		])
+		.then(result =>{
+			if (!result) return res.tools.setJson(1, 'match不存在或已删除')
+			//处理数据, 增加答案个数。TODO: 更新mongo版本, 把函数写到sql中
+			result[0].questionsData.forEach((item, index, arr) => {
+				arr[index]["answerCnt"] = item.answer.length
+			})
+			
+			return res.tools.setJson(0, '调用成功', result[0])
+		}).catch(err => next(err))
+		//		//Because you are trying to use the $lookup features (syntax) from MongoDB v3.6 on MongoDB v3.4
+
 	}
 
 	showScore(req, res, next) {
@@ -424,8 +515,13 @@ class Ctrl{
 			fields : {}, 
 			options: {}, 
 		}
+		//TODO: 还需要加入对choices数据的判断, 需要合规数据
+		let choices = req.body.choices
 
-		const choices = req.body.choices
+		//处理choices, 使之升序排列
+		choices.forEach((item, index, arr) => {
+			arr[index] = item.sort((a, b) => {return a - b} )
+		})
 
 		console.log("req.body", req.body)
 		this.model.model.aggregate([
@@ -455,10 +551,13 @@ class Ctrl{
 			//console.log(docs[0].questionsData)
 
 			//判断题目正确与否
+			//TODO: 需要加入评分策略, 对于多选题有效
 			let trueCnt = 0, falseCnt = 0
 			docs[0].questionsData.forEach((item, index) => {
 				//console.log(item.answer)
-				if (item.answer[0] == choices[index]) { trueCnt++ }
+				//可能需要sort
+				console.log(index, item.answer.join(","), choices[index].join(","))
+				if (item.answer.join(",") == choices[index].join(",")) { trueCnt++ }
 				else { falseCnt++ }
 			})
 			//计算成绩
@@ -531,6 +630,12 @@ class Ctrl{
 	}
 
 	generate(req, res, next) {
+
+		//当前的东西按分类，所以需要按分类抽取.. 给每个用户不同的题目? Q:去重问题
+
+		const body = {
+			type : 1
+		}
 
 		this.questionsModel.model.aggregate( [ { $project: { _id: 1, title: 1 }} , { $sample: { size: 10 } } ] ).then(
 			docs => {

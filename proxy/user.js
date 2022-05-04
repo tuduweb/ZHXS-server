@@ -1,9 +1,11 @@
-import Model from '../models/user'
+import UserModel from '../models/user'
+import UserGradeModel from '../models/user_score'
 
 class Common{
-	constructor(model) {
+	constructor(model, scoreModel) {
 		Object.assign(this, {
-			model, 
+			model,
+			scoreModel,
 		})
 	}
 
@@ -26,6 +28,10 @@ class Common{
 			username: username
 		})
 	}
+
+	addScore() {
+		//
+	}
 }
 
-export default new Common(Model)
+export default new Common(UserModel, UserGradeModel)

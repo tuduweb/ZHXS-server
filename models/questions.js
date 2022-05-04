@@ -3,10 +3,10 @@ import mongoose from 'mongoose'
 const ObjectId = mongoose.Schema.Types.ObjectId
 
 const Schema = mongoose.Schema({
-	types   : [{
-		type: ObjectId, 
-		ref : 'classify',
-	}],
+	// types   : [{
+	// 	type: ObjectId, 
+	// 	ref : 'classify',
+	// }],
 	title    : String,
     type     : Number,
 	remark   : String,

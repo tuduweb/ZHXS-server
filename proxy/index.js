@@ -15,6 +15,7 @@ import user from './user'
 import upload from './upload'
 
 import user_relation from '../models/user_relation'
+import user_score from '../models/user_score'
 import voice from '../models/voice'
 
 export default {
@@ -30,6 +31,7 @@ export default {
 	suite	: new RestBase(suite),
 	study	: new RestBase(study),
 	user_relation: new RestBase(user_relation),
+	user_score: new RestBase(user_score),
 	voice: new RestBase(voice),
 
 	user    : user, 

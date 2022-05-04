@@ -29,6 +29,8 @@ class Ctrl{
 		this.app.put('/api/questions/:id', this.put.bind(this))
 		this.app.delete('/api/questions/:id', this.delete.bind(this))
 		this.app.get('/api/questions/search/all', this.search.bind(this))
+
+		this.app.post('/api/questions/demo', this.post.bind(this))
 	}
 
 	/**
@@ -205,12 +207,25 @@ class Ctrl{
 	 */
 	post(req, res, next) {
 		const body = {
-			name  : req.body.name, 
-			price : req.body.price, 
-			remark: req.body.remark, 
-			images: req.body.images, 
-			types : req.body.types, 
+			title  	: req.body.title,
+			content : req.body.content,
+			options	: req.body.options,
+			answer  : req.body.answer,
+			type    : req.body.type,
+			remark  : req.body.remark,
 		}
+
+		console.log(body)
+		console.log("req.body", req.body)
+
+		// const body = {
+		// 	title  : "问题" + parseInt(Math.random()*10000),
+		// 	content: "内容内容" + parseInt(Math.random()*100000),
+		// 	options: ["选项A", "选项B", "选项C"],
+		// 	answer : [0],
+		// 	type : 3, 
+		// 	remark: "remark"
+		// }
 
 		this.model.post(body)
 		.then(doc => res.tools.setJson(0, '新增成功', {_id: doc._id}))

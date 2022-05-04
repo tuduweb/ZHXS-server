@@ -83,3 +83,8 @@ npm test
 ##  License
 
 MIT
+
+## 一些记录
+
+wx.login -> openid
+usertoken -> userInfo

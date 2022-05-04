@@ -89,6 +89,8 @@ class Ctrl{
 			status: status,
 		}
 
+		console.log(query)
+
 		status === 'all' && delete query.status
 
 		const opts = {

@@ -36,6 +36,8 @@ class Ctrl{
 	routes() {
 		this.app.post('/api/study/:id/record/:segIdx', this.updateRecord.bind(this))
 		this.app.get('/api/study/:id', this.get.bind(this))
+		this.app.post('/api/study/demo', this.post.bind(this))
+		this.app.put('/api/study/demo', this.put.bind(this))
 	}
 
     /**
@@ -192,13 +194,13 @@ class Ctrl{
 
 		const params = {
 			query  : {
-				_id: ObjectId(req.params.id)
+				_id: req.params.id
 			},
 			fields : {}, 
 			options: {}, 
 		}
 
-		console.log(req.params)
+		console.log(_id, params)
 
 		this.model.model.findOne(params.query, params.fields).exec()
 		.then(result => {
@@ -206,6 +208,52 @@ class Ctrl{
 			return res.tools.setJson(0, '调用成功', result)
 		}).catch(err => next(err))
 
+	}
+
+
+	post(req, res, next) {
+		// segments需要判断是不是json类型?
+		let segments = []
+		
+		try{
+			segments = JSON.parse(req.body.segments)
+		}catch(e) {
+			console.log(e)
+		}
+
+		const body = {
+			title    : req.body.title,
+			content  : req.body.content,
+			videoUrl : req.body.videoUrl,
+			segments : segments,
+			status   : req.body.status
+		}
+
+		console.log(body)
+
+		this.model.post(body)
+		.then(doc => res.tools.setJson(0, '新增成功', {_id: doc._id}))
+		.catch(err => next(err))
+	}
+
+	put(req, res, next) {
+		const query = {
+			_id: req.body.id
+		}
+
+		const body = {
+			comments: JSON.parse(req.body.comments),
+		}
+
+		console.log(req.body.comments)
+		console.log(JSON.parse(req.body.comments))
+
+		this.model.put(query, body)
+		.then(doc => {
+			if (!doc) return res.tools.setJson(1, '资源不存在或已删除')
+			return res.tools.setJson(0, '更新成功', doc)
+		})
+		.catch(err => next(err))
 	}
 
 	import(req, res, next) {
