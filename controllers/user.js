@@ -529,7 +529,7 @@ class Ctrl{
 		this.model.findByName(req.user.username)
 		.then(doc => {
 			if (!doc) return res.tools.setJson(1, '用户不存在或已删除')
-
+			console.log(req.body)
 			for(let key in req.body) {
 				doc[key] = req.body[key]
 			}
@@ -568,9 +568,9 @@ class Ctrl{
 		this.model.findByName(req.user.username)
 		.then(doc => {
 			if (!doc) return res.tools.setJson(1, '用户不存在或已删除')
-			faker.setLocale("zh_CN")
-			doc["nickname"] = faker.name.findName()
-			doc["school"] = faker.name.findName()
+			// faker.setLocale("zh_CN")
+			// doc["nickname"] = faker.name.findName()
+			// doc["school"] = faker.name.findName()
 			return res.tools.setJson(0, '调用成功', doc)
 		})
 		.catch(err => next(err))
