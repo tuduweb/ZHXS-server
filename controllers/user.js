@@ -42,6 +42,7 @@ class Ctrl{
 		this.app.get('/api/user/info', this.getInfo.bind(this))
 		this.app.get('/api/user/openIdInfo', this.getOpenIdInfo.bind(this))
 
+		this.app.get('/api/user/rank/demo', this.rank.bind(this))
 		this.app.get('/api/user/shareFriend/demo', this.getShareFriendInfo.bind(this))
 	}
 
@@ -621,6 +622,35 @@ class Ctrl{
 		})
 		.catch(err => {
 			next(err)
+		})
+
+	}
+
+
+	rank(req, res, next) {
+		const _school = ["湘潭大学", "湘潭市一中", "湘大附小", "湘潭市研究院"]
+		const _name = ["名字很长很炫酷", "恋爱的犀牛", "呆呆的瓜瓜", "可爱的团子"]
+		const _point = [12300, 10000 , 9876, 7000]
+		let _data = []
+
+		for (let index = 0; index < 4; index++) {
+			_data.push({
+				"school": _school[index],
+				"userName": _name[index],
+				"point": _point[index],
+				"avatar": '/assets/images/faces/face1.jpeg'
+			})
+		}
+
+		res.tools.setJson(0, "调用成功", {
+			week: {
+				statistic: {
+					"sum": 58,
+					"highest": 98,
+					"accuracy": 80
+				},
+				rank: _data
+			},
 		})
 
 	}
