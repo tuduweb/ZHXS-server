@@ -1,5 +1,6 @@
 import proxy from '../proxy'
 import mongoose from 'mongoose'
+import user_score from '../models/user_score'
 
 class Ctrl{
 	constructor(app) {
@@ -8,7 +9,8 @@ class Ctrl{
 			model: proxy.match,
             suiteModel: proxy.suite,
             questionsModel: proxy.questions,
-			userScoreModel: proxy.user_score
+			userScoreModel: proxy.user_score,
+			userModel: proxy.user
 		})
 
 		this.init()
@@ -27,6 +29,9 @@ class Ctrl{
 	routes() {
 		this.app.get('/api/match', this.getAll.bind(this))
 
+		this.app.get('/api/match/scoreup/demo', this.scoreDemo.bind(this))
+
+
 		this.app.post('/api/match/score/demo', this.postScore.bind(this))
 		this.app.get('/api/match/score/demo', this.getScore.bind(this))
 
@@ -44,6 +49,8 @@ class Ctrl{
 		this.app.post('/api/match', this.post.bind(this))
 		this.app.put('/api/match/:id', this.put.bind(this))
 		this.app.delete('/api/match/:id', this.delete.bind(this))
+
+
 
 	}
 
@@ -580,6 +587,37 @@ class Ctrl{
 			.then(doc => {
 				if (!doc) return res.tools.setJson(1, '保存结果失败!请联系管理员。')
 				//return res.tools.setJson(0, '更新成功', doc)
+
+				const scoreBody = {
+					user: req.user.id,
+					score: 10,
+					scoreStat: 0,
+					scoreType: 10,
+					remark: "用户完成竞赛，奖励积分。"
+				}
+		
+				this.userScoreModel.post(scoreBody)
+				.then(doc => {
+					if (!doc) console.log("更新积分表失败", scoreBody)
+					else console.log("更新积分表成功", scoreBody)
+				})
+				.catch(err => console.log(err))
+
+
+				this.userModel.findByName(req.user.username).then(doc => {
+					if (doc) {
+						doc.score = doc.score + 10
+						doc.save()
+					}
+				})
+				// const userBody = {
+				// 	user: req.user.id,
+				// 	score: 10,
+				// 	scoreStat: 0,
+				// 	scoreType: 10,
+				// 	remark: "用户完成竞赛，奖励积分。"
+				// }
+				
 				const result = {
 					_id: docs[0]._id,
 					_doc: docs[0],
@@ -673,6 +711,24 @@ class Ctrl{
 		).catch(err => console.log(err))
 
 
+	}
+
+
+	scoreDemo(req, res, next) {
+		const scoreBody = {
+			user: mongoose.Types.ObjectId('626282b26a769711c6dfbb63'),//req.user.id,
+			score: 10,
+			scoreStat: 0,
+			scoreType: 10,
+			remark: "用户完成竞赛，奖励积分。"
+		}
+
+		this.userScoreModel.post(scoreBody)
+		.then(doc => {
+			if (!doc) return res.tools.setJson(1, '保存结果失败!请联系管理员。')
+			return res.tools.setJson(0, '调用成功', doc)
+		})
+		.catch(err => console.log(err))
 	}
 }
 
