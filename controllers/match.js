@@ -54,6 +54,9 @@ class Ctrl{
 		this.app.delete('/api/match/:id', this.delete.bind(this))
 
 
+		this.app.get('/api/match/diff/demo/:id', this.diff.bind(this))
+
+
 
 	}
 
@@ -622,11 +625,11 @@ class Ctrl{
 			{ $lookup: { from: "questions", localField: "suiteData.questions", foreignField: "_id", as: "questionsData" } },
 
 		]).then(docs => {
-			if(!docs) return;
+			if(!docs) return res.tools.setJson(1, "没有找到数据!");
 
 			console.log("appgregate", docs)
-		
-			//console.log(docs[0].questionsData)
+
+			let createTime = docs[0].create_at
 
 			//判断题目正确与否
 			//TODO: 需要加入评分策略, 对于多选题有效
@@ -646,6 +649,8 @@ class Ctrl{
 			const query = {
 				_id: req.body.id
 			}
+
+			let finishTime = Date.now()
 	
 			const body = {
 				userChoices : req.body.choices,
@@ -656,7 +661,7 @@ class Ctrl{
 					finish: 5,
 					trueNum: trueCnt
 				}),
-				finish_at: Date.now(),
+				finish_at: finishTime,
 				state : 2
 			}
 
@@ -665,6 +670,7 @@ class Ctrl{
 				if (!doc) return res.tools.setJson(1, '保存结果失败!请联系管理员。')
 				//return res.tools.setJson(0, '更新成功', doc)
 
+				//积分处理
 				const scoreBody = {
 					user: req.user.id,
 					score: 10,
@@ -680,10 +686,22 @@ class Ctrl{
 				})
 				.catch(err => console.log(err))
 
+				//时间处理
+				let timeDiff = Math.ceil((finishTime - createTime) / 1000 / 60)
+
+				if(timeDiff > 0) {
+					//
+				}
 
 				this.userModel.findByName(req.user.username).then(doc => {
 					if (doc) {
+						//需要加锁操作..
 						doc.score = doc.score + 10
+						
+						if(timeDiff > 0) {
+							doc.studyTime = doc.studyTime + timeDiff > 100 ? 100 : timeDiff
+						}
+
 						doc.save()
 					}
 				})
@@ -791,7 +809,7 @@ class Ctrl{
 				}
 
 			}
-		).catch(err => console.log(err))
+		).catch(err => next(err))
 
 
 	}
@@ -811,7 +829,44 @@ class Ctrl{
 			if (!doc) return res.tools.setJson(1, '保存结果失败!请联系管理员。')
 			return res.tools.setJson(0, '调用成功', doc)
 		})
-		.catch(err => console.log(err))
+		.catch(err => next(err))
+	}
+
+	diff(req, res, next) {
+		
+		this.model.model.aggregate([
+			{ $match: { _id: mongoose.Types.ObjectId(req.params.id) }  },
+			{ $lookup: { from: "suites", localField: "suite", foreignField: "_id", as: "suiteData" } },
+			{
+				$unwind: {
+					path: '$suiteData',
+					preserveNullAndEmptyArrays: true,
+				}
+			},
+			{
+				$project: {
+					_id : 1,
+					state: 1,
+					create_at: 1,
+					'suiteData.questions': 1
+				}
+			},
+			{ $lookup: { from: "questions", localField: "suiteData.questions", foreignField: "_id", as: "questionsData" } },
+
+		]).then(docs => {
+			if(!docs) return res.tools.setJson(1, "没有找到数据!");
+
+			let createTime = docs[0].create_at
+			let finishTime = Date.now()
+			let diff = Math.ceil((finishTime - createTime) / 1000 / 60)
+
+			console.log("time", createTime, new Date(finishTime))
+
+			console.log("diff", diff, diff / 60, diff / 3600)
+			res.tools.setJson(0, "成功", diff)
+		})
+		.catch(err => next(err))
+
 	}
 }
 
