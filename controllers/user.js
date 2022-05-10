@@ -44,6 +44,7 @@ class Ctrl{
 
 		this.app.get('/api/user/rank/demo', this.rank.bind(this))
 		this.app.get('/api/user/shareFriend/demo', this.getShareFriendInfo.bind(this))
+		this.app.get('/api/user/share', this.getAllShared.bind(this))
 	}
 
 	/**
@@ -626,6 +627,48 @@ class Ctrl{
 
 	}
 
+	getAllShared(req, res, next) {
+		const query = {
+			parentId: req.user.id
+		}
+
+		const opts = {
+			page : req.query.page, 
+			limit: req.query.limit
+		}
+
+		if (req.query.type) {
+			query.types = req.query.type
+		}
+
+		if (req.query.keyword) {
+			query.name = req.query.keyword
+		}
+
+		const options = {
+			path    : 'userId', 
+			select  : {}, 
+		}
+
+		const field = {
+
+		}
+
+		Promise.all([
+			this.relationModel.countAsync(query), 
+			this.relationModel.getAll(query, field, options), 
+		])
+		.then(docs => {
+			res.tools.setJson(0, '调用成功', {
+				items   : docs[1], 
+				paginate: res.paginate(Number(opts.page), Number(opts.limit), docs[0]), 
+			})
+		})
+		.catch(err => next(err))
+	}
+
+
+
 
 	rank(req, res, next) {
 		const _school = ["湘潭大学", "湘潭市一中", "湘大附小", "湘潭市研究院"]
@@ -648,6 +691,15 @@ class Ctrl{
 					"sum": 58,
 					"highest": 98,
 					"accuracy": 80
+				},
+				rank: _data
+			},
+
+			day: {
+				statistic: {
+					"sum": 10,
+					"highest": 84,
+					"accuracy": 78
 				},
 				rank: _data
 			},

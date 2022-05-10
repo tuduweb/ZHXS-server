@@ -3,18 +3,18 @@ import mongoose from 'mongoose'
 const ObjectId = mongoose.Schema.Types.ObjectId
 
 const Schema = mongoose.Schema({
-	// types   : [{
-	// 	type: ObjectId, 
-	// 	ref : 'classify',
-	// }],
 	title    : String,
+    shortname: String,
+
     type     : Number,
 	remark   : String,
     content  : String,
-	imageUrl : String,
-	timuType : Number,
-	options  : Array,//选项
-    answer   : Array,
+
+    imageUrl : String,
+    thumbUrl : String,
+
+    status   : Number,
+
 	create_at: {
 		type   : Date,
 		default: Date.now(),
@@ -22,4 +22,4 @@ const Schema = mongoose.Schema({
 	update_at: Date,
 })
 
-export default mongoose.model('questions', Schema)
+export default mongoose.model('pintu', Schema)

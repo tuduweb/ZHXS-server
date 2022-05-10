@@ -35,8 +35,11 @@ class Ctrl{
 		this.app.post('/api/match/score/demo', this.postScore.bind(this))
 		this.app.get('/api/match/score/demo', this.getScore.bind(this))
 
+		this.app.get('/api/match/st/demo', this.startDemo.bind(this))
+
+
 		this.app.get('/api/match/start', this.start.bind(this))
-		this.app.get('/api/match/start/:typeId', this.start.bind(this))
+		this.app.get('/api/match/start/:tid', this.start.bind(this))
 		this.app.post('/api/match/submit', this.submit.bind(this))
 		
 		this.app.get('/api/match/detail/demo/:id', this.detail.bind(this))
@@ -44,7 +47,7 @@ class Ctrl{
 
 		this.app.get('/api/match/score/:id', this.showScore.bind(this))
 
-		this.app.get('/api/match/generate', this.generate.bind(this))
+		this.app.get('/api/match/demo/generate', this.generate.bind(this))
 		this.app.get('/api/match/:id', this.get.bind(this))
 		this.app.post('/api/match', this.post.bind(this))
 		this.app.put('/api/match/:id', this.put.bind(this))
@@ -387,7 +390,9 @@ class Ctrl{
 
 	// // path: data->questions->[suite]->datas->...
 
-    start(req, res, next) {
+    startDemo(req, res, next) {
+		console.log(req.params)
+		console.log(req.body)
         //权限验证
 
         //根据模式, 生成新的答题比赛
@@ -407,13 +412,77 @@ class Ctrl{
 		// 		}
 		// 	})
 		// 	.catch(err => console.log(err))
+		
+		if(req.params.tid) {
+			//
+		}
 
 		// 需要限制lookup查询的元素的field
         this.suiteModel.model.aggregate( [
+			//{$match: {type: 3}},
 			{$sample: { size: 1 } },
-			{$lookup: { from: "questions", localField: "questions", foreignField: "_id", as: "datas"}}
+			{$lookup: { from: "questions", localField: "questions", foreignField: "_id", as: "datas"}},
+			// {$sample: { size: 1 } },
 		])
         .then(doc => {
+			console.log("doc", doc, req.params.tid)
+			if (!doc) return res.tools.setJson(1, '资源不存在或已删除')
+
+			return res.tools.setJson(1, "hello world", doc)
+
+			//console.log(doc[0].datas) //题目数据
+
+			const body = {
+				suite : doc[0]._id,
+				owner: req.user._id //TypeError: Cannot read property '_id' of undefined. beacuse of QUOTE jwt middleware
+			}
+
+			console.log(body)
+
+			this.model.post(body)
+			.then(matchDoc => {
+
+				res.tools.setJson(0, '新增挑战成功', {_id: matchDoc._id, questions: doc[0]})
+			
+			})
+			.catch(err => next(err))
+
+			// this.model.post()
+
+			//return res.tools.setJson(0, '调用成功', doc)
+		})
+        .catch(err => next(err))
+    }
+
+
+    start(req, res, next) {
+		console.log(req.query)
+        //权限验证
+
+        //根据模式, 生成新的答题比赛
+        
+        //从套题里面获取比赛
+
+		
+		if(req.query.tid) {
+			//
+		}
+
+		// 需要限制lookup查询的元素的field
+        this.suiteModel.model.aggregate( [
+			{$match: {type: Number(req.query.tid) }},
+			{$sample: { size: 1 } },
+			{$lookup: { from: "questions", localField: "questions", foreignField: "_id", as: "datas"}},
+			// {$sample: { size: 1 } },
+			// {
+			// 	$project: {
+			// 		_id : 1,
+			// 		create_at: 1,
+			// 	}
+			// }
+		])
+        .then(doc => {
+			console.log("doc", doc, req.params.tid)
 			if (!doc) return res.tools.setJson(1, '资源不存在或已删除')
 
 			//console.log(doc[0].datas) //题目数据
@@ -500,6 +569,8 @@ class Ctrl{
 			options: {}, 
 		}
 
+		//需要根据matchId 找到完成人的信息 主要需要显示头像信息
+
 		this.model.model.findOne(params.query, params.fields).exec()
 		.then(result => {
 			if (!result) return res.tools.setJson(1, 'match不存在或已删除')
@@ -579,6 +650,12 @@ class Ctrl{
 			const body = {
 				userChoices : req.body.choices,
 				grade: _grade,
+				accuracy: 100 / docs[0].questionsData.length * trueCnt * 100,
+				results: JSON.stringify({
+					point: 10,
+					finish: 5,
+					trueNum: trueCnt
+				}),
 				finish_at: Date.now(),
 				state : 2
 			}
@@ -670,12 +747,18 @@ class Ctrl{
 	generate(req, res, next) {
 
 		//当前的东西按分类，所以需要按分类抽取.. 给每个用户不同的题目? Q:去重问题
+		console.log("req", req.body, req.query, req.params)
 
-		const body = {
-			type : 1
+		let body = {}
+
+		if(req.query.tid) {
+			body = {
+				type : req.query.tid
+			}
 		}
 
-		this.questionsModel.model.aggregate( [ { $project: { _id: 1, title: 1 }} , { $sample: { size: 10 } } ] ).then(
+
+		this.questionsModel.model.aggregate( [ { $match: { type: Number(req.query.tid) }  }, { $project: { _id: 1, title: 1 }} , { $sample: { size: 10 } } ] ).then(
 			docs => {
 				
 				if(docs.length < 10) {
@@ -692,7 +775,7 @@ class Ctrl{
 
 					const body = {
 						title  : "套题标题" + Math.random()*1000, 
-						type : 3, 
+						type : req.query.tid, 
 						remark: "remark",
 						questions: questionIds
 					}

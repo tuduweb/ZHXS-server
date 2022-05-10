@@ -213,6 +213,7 @@ class Ctrl{
 			answer  : req.body.answer,
 			type    : req.body.type,
 			remark  : req.body.remark,
+			imageUrl: req.body.imageUrl
 		}
 
 		console.log(body)

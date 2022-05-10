@@ -3,37 +3,25 @@ import mongoose from 'mongoose'
 const ObjectId = mongoose.Schema.Types.ObjectId
 
 const Schema = mongoose.Schema({
-    suite    : {
-		type: ObjectId, 
-		ref : 'suite',
-	},
     type     : Number,
 	remark   : String,
 	create_at: {
 		type   : Date,
 		default: Date.now(),
 	},
-	finish_at: Date,
-	userChoices: Array,
-	grade: {
-		type   : Number,
-		default: -1,
-	},
-	accuracy: {
-		type : Number,
-	},
-	results:{
-		type : String
-	},
-	state: {
+	status: {
 		type   : Number,
 		default: 0,
 	},
-    owner: [{
+    creator:{
 		type: ObjectId, 
 		ref : 'user',
-	}],
+	},
+    matchId: {
+		type: ObjectId, 
+		ref : 'match',
+    },
 	update_at: Date,
 })
 
-export default mongoose.model('match', Schema)
+export default mongoose.model('match_shared', Schema)

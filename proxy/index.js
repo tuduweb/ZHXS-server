@@ -18,6 +18,8 @@ import user_relation from '../models/user_relation'
 import user_score from '../models/user_score'
 import voice from '../models/voice'
 
+import pintu from '../models/pintu'
+
 export default {
 	banner  : new RestBase(banner), 
 	classify: new RestBase(classify), 
@@ -33,6 +35,7 @@ export default {
 	user_relation: new RestBase(user_relation),
 	user_score: new RestBase(user_score),
 	voice: new RestBase(voice),
+	pintu: new RestBase(pintu),
 
 	user    : user, 
 	upload  : upload, 

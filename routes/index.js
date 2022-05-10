@@ -11,7 +11,7 @@ import user from '../controllers/user'
 import questions from '../controllers/questions'
 import match from '../controllers/match'
 import study from '../controllers/study'
-
+import pintu from '../controllers/pintu'
 export default function(app) {
 	new common(app)
 	new qiniu(app)
@@ -26,4 +26,5 @@ export default function(app) {
 	new questions(app)
 	new match(app)
 	new study(app)
+	new pintu(app)
 }
