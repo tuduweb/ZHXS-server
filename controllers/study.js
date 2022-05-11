@@ -34,8 +34,8 @@ class Ctrl{
 	 * 注册路由
 	 */
 	routes() {
-		this.app.post('/api/study/:id/record/:segIdx', this.updateRecord.bind(this))
 		this.app.get('/api/study/:id', this.get.bind(this))
+		this.app.post('/api/study/:id/record/:segIdx', this.updateRecord.bind(this))
 		this.app.post('/api/study/demo', this.post.bind(this))
 		this.app.put('/api/study/demo', this.put.bind(this))
 	}
@@ -177,10 +177,10 @@ class Ctrl{
 
 					const voiceBody = {
 						userId: mongoose.Types.ObjectId(req.user._id),
-						grade: resData['grade'],
+						grade: resData['score'],
 						commentId: resData['commentId'],
-						studyId: mongoose.Types.ObjectId('626282b26a769711c6dfbb63'),//voiceId
-						segId: voiceSegId,
+						studyId: mongoose.Types.ObjectId(idLists[voiceId - 1]),//voiceId
+						segId: int(voiceSegId),
 						voicePath: filenewpath,
 
 						//parentId: mongoose.Types.ObjectId(refInfo.userId),
@@ -199,7 +199,7 @@ class Ctrl{
 	}
 
 	get(req, res, next) {
-
+		console.log("params", req.params.sid, req.params.id)
 		const idLists = [
 			'6266a1cae81e8e1e538bd4f6',
 			'6266a1e5e81e8e1e538bd4f7',
@@ -207,7 +207,7 @@ class Ctrl{
 		]
 		const _sid = req.params.id
 
-		const _id = idLists[_sid]
+		const _id = idLists[_sid - 1]
 
 		const params = {
 			query  : {
