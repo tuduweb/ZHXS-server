@@ -180,7 +180,7 @@ class Ctrl{
 						grade: resData['score'],
 						commentId: resData['commentId'],
 						studyId: mongoose.Types.ObjectId(idLists[voiceId - 1]),//voiceId
-						segId: int(voiceSegId),
+						segId: voiceSegId,
 						voicePath: filenewpath,
 
 						//parentId: mongoose.Types.ObjectId(refInfo.userId),
