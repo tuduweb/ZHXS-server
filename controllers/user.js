@@ -535,6 +535,7 @@ class Ctrl{
 			for(let key in req.body) {
 				doc[key] = req.body[key]
 			}
+			console.log("userDoc", doc)
 
 			doc.update_at = Date.now()
 

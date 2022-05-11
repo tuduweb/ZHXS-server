@@ -77,6 +77,16 @@ class Ctrl{
 		const voiceId = req.params.id
 		const voiceSegId = req.params.segIdx
 
+		const idLists = [
+			'6266a1cae81e8e1e538bd4f6',
+			'6266a1e5e81e8e1e538bd4f7',
+			'6266a0cce81e8e1e538bd4f5'
+		]
+
+		idLists.forEach((item, index, array) => {
+
+		})
+
 		//res.tools.setJson(0, '上传成功', req)
 
 		this.initFormidable(req, (err, fields, files) => {
@@ -190,11 +200,18 @@ class Ctrl{
 
 	get(req, res, next) {
 
-		const _id = req.params.id
+		const idLists = [
+			'6266a1cae81e8e1e538bd4f6',
+			'6266a1e5e81e8e1e538bd4f7',
+			'6266a0cce81e8e1e538bd4f5'
+		]
+		const _sid = req.params.id
+
+		const _id = idLists[_sid]
 
 		const params = {
 			query  : {
-				_id: req.params.id
+				_id: _id
 			},
 			fields : {}, 
 			options: {}, 

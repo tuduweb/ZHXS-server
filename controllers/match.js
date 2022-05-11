@@ -572,9 +572,18 @@ class Ctrl{
 			options: {}, 
 		}
 
+		const options = {
+			path    : 'owner', 
+			select  : {
+				"nickname" : 1,
+				"school" : 1,
+				"avatar" : 1
+			}, 
+		}
+
 		//需要根据matchId 找到完成人的信息 主要需要显示头像信息
 
-		this.model.model.findOne(params.query, params.fields).exec()
+		this.model.findOneAndPopulateAsync(params, options)
 		.then(result => {
 			if (!result) return res.tools.setJson(1, 'match不存在或已删除')
 			return res.tools.setJson(0, '调用成功', result)
