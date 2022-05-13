@@ -91,7 +91,7 @@ app.use((req, res, next) => {
 
 // custom middleware
 app.use(/\/api/, tools)
-app.use(/^((?!sign\/up|sign\/in|captcha|demo|score).)+$/, [
+app.use(/^((?!sign\/up|sign\/in|captcha|demo|score|open).)+$/, [
 	jwt({ secret: config.secret}), 
 	auth.verifyToken.bind(auth)
 ])//quote
@@ -114,7 +114,6 @@ app.use((req, res, next) => {
 // will print stacktrace
 if (app.get('env') === 'development') {
 	app.use((err, req, res, next) => {
-		console.log(err)
 		res.status(err.status || 500)
 		res.render('error', {
 			layout: false,
