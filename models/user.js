@@ -29,6 +29,11 @@ const Schema = mongoose.Schema({
 		required: true, 
 		default : 0, 
 	},
+	studyCnt: {
+		type    : Number, 
+		required: true, 
+		default : 0, 
+	},
 	difenSet : {
 		type    : Number, 
 		required: true, 
