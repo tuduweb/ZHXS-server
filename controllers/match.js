@@ -706,7 +706,7 @@ class Ctrl{
 					if (doc) {
 						//需要加锁操作..
 						doc.score = doc.score + 10
-						
+						doc.studyCnt = doc.studyCnt + 1
 						if(timeDiff > 0) {
 							doc.studyTime = doc.studyTime + timeDiff > 100 ? 100 : timeDiff
 						}
